@@ -54,10 +54,26 @@
         sint occaecat cupidatat non proident, sunt in culpa qui
         officia deserunt mollit anim id est laborum.
     </div>
+    <div id="log">note: please open this demo page with a browser which support JSON.stringify</div>
+    <div>
+        <button onclick="javascript:scrolltop()">scrolltop all</button>
+        <button onclick="javascript:scrollbottom()">scrollbottom all</button>
+        <br />
+        <button onclick="javascript:scrolltop('#con1')">scrolltop 1</button>
+        <button onclick="javascript:scrollbottom('#con1')">scrollbottom 1</button>
+    </div>
 
     <script>
         $(".container").shadowbar();
-        $("#con3").shadowbar({color: "#ff0000", auto_hide: false});
+        $("#con3").shadowbar({onscroll:function(data){$("#log").html("scroll: "+JSON.stringify(data)+"<br />");}, color: "#ff0000", auto_hide: false});
+        function scrollbottom(sel){
+            var sel = sel || "#con1, #con2, #con3";
+            $(sel).shadowbar("scrollbottom");
+        }
+    function scrolltop(sel){
+            var sel = sel || "#con1, #con2, #con3";
+            $(sel).shadowbar("scrolltop");
+        }
     </script>
 </body>
 </html>

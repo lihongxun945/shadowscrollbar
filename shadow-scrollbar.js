@@ -7,17 +7,22 @@
  * I find facebook's inbox opoup window use this method, so I just write a jQuery plugin to implement.
  * @example:
  * $("#container").shadowbar({color:"#ff0000"}); //create shadowbar, args is the optional settings;
- *  // if shadowbar was create, but the content change(ie: use js to change the innerHTML), you can use the following method to update the scrollbar:
- *  $("#container").shadowbar("update");
+ *  // if shadowbar was create, but the content change(ie: use js to change the innerHTML), you can use call shadowbar() again to refresh it:
+ *  $("#container").shadowbar();    //or use shadowbar("update");
+ *  //you can also use scrolltop or scrollbottom
+ *  $("#container").shadowbar("scrolltop"); //scrolltop in 200millsec
+ *  $("#container").shadowbar("scrolltop", 1000); //scrolltop in 1000 millsec
+ *  $("#container").shadowbar("scrollbottom");  //just like the usage of scrolltop
  *  @autor: axun
  *  @time: 2012/10/3
- *  TODO: scroll event
  *  TODO: allow mouse drag the scrollbar
  */
 (function($){
     $.fn.shadowbar = function(options){
-        
+        args = arguments;
+        $.isFunction(options) && (options = {onscroll: options});
         var settings = $.extend({
+            onscroll: null,     //scroll callback
             stopPropagation : true, //prevent the scroll event bubble to parent element;
             color: "#000",  //the scrollbar color;
             opacity: 0.5,   //the scrollbar opacity when it's shown;
@@ -29,26 +34,32 @@
         }, options);
 
         var createDom = function($this){
+            if($this.hasClass("shadow-scroller")) return;
             $this.addClass("shadow-scroller").css({position: "relative", overflow: "hidden"}).wrapInner("<div class=\"shadow-scroller-content\"></div>");
             $this.wrapInner("<div class=\"shadow-scroller-inner\"></div>");
             $this.append("<div class=\"shadow-scroller-bar\"></div>");
             var $inner = $this.children(".shadow-scroller-inner");
             var $bar = $this.children(".shadow-scroller-bar");
-            var $content = $inner.children(".shadow-scroller-content");
             $inner.css({height: "100%", width: "150%", overflow: "auto"});
-            $bar.css({position: "absolute", right: settings.right, top: settings.top, opacity: settings.opacity, background: settings.color, width: settings.width, "border-radius": 3});
+
+            $bar.css({position: "absolute",  "border-radius": 3});
+            $bar.css({right: settings.right, top: settings.top, opacity: settings.opacity, background: settings.color, width: settings.width});
         };
 
-        var onScroll = function($bar, $inner, $content){
+
+        var onScroll = function($this, $bar, $inner, $content){
             var scrollTop = $inner.scrollTop();
             var contentHeight = $content.height();
             var innerHeight = $inner.height();
             var top = scrollTop / contentHeight * (innerHeight - settings.top * 2);
             $bar.stop().css({opacity: settings.opacity}).show();
             $bar.css({top: (top + settings.top)});
+            if(settings.onscroll && $.isFunction(settings.onscroll)) {
+                settings.onscroll.call($this, {top: scrollTop, height: contentHeight});
+            }
         };
 
-        var update = function($bar, $inner, $content) {
+        var update = function($this, $bar, $inner, $content) {
             var innerHeight = $inner.height();
             var contentHeight = $content.height();
             if(innerHeight >= contentHeight) {
@@ -58,6 +69,7 @@
             }
             var h = (innerHeight / contentHeight) * (innerHeight - settings.top * 2);
             $bar.css({height: h});
+            onScroll($this, $bar, $inner, $content);
         };
 
         var hide = function($el) {
@@ -68,10 +80,12 @@
             $el.stop().show();
         };
 
-        var bindEvents = function($bar, $inner, $content) {
+        var bindEvents = function($this, $bar, $inner, $content) {
+            if($this.hasClass("shadow-scroller-binded")) return;
+            $this.addClass("shadow-scroller-binded");
             $inner.scroll(function(e){
                 show($bar);
-                onScroll($bar, $inner, $content);
+                onScroll($this, $bar, $inner, $content);
             });
 
 
@@ -107,15 +121,34 @@
             }
         };
 
+        var scrollto = function($bar, $inner, top, time){
+            $bar.stop().show();
+            $inner.stop().animate({scrollTop: top}, time);
+        }
+
         return this.each(function(){
             var $this = $(this);
-            !(options === "update") && createDom($this);
+            createDom($this);
             var $inner = $this.children(".shadow-scroller-inner");
             var $bar = $this.children(".shadow-scroller-bar");
             var $content = $inner.children(".shadow-scroller-content");
 
-            !(options === "update") && bindEvents($bar, $inner, $content);
-            update($bar, $inner, $content);
+            bindEvents($this, $bar, $inner, $content);
+            update($this, $bar, $inner, $content);
+            if(typeof(options) === "string") {
+                switch(options) {
+                    case "update":
+                        break;  //already update
+                    case "scrolltop":
+                        var time = args[1] || 200;
+                        scrollto($bar, $inner, 0, time);
+                        break;
+                    case "scrollbottom":
+                        var time = args[1] || 200;
+                        scrollto($bar, $inner, ($content.height() - $inner.height()), time);
+                        break;
+                }
+            }
         });
 
     }
