@@ -1,5 +1,5 @@
-# shadowbar
-### what is shadow bar
+# shadowscrollbar
+### what is shadowscrollbar
 shadowbar is a jquery scrollbar plugin
 but it doesn't listen mouse and touch event to scroll the element, instead it listen to the native scroll event and use js to draw a mac-lion style scrollbar. I use css3 border-radius to draw the scrollbar, so in ie8- the scrollbar is a rectangle;
 in short, it just hide the native scrollbar and draw a shadow of it.
